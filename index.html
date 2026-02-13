@@ -1,1014 +1,809 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <!-- phone fit + notch safe area -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Valentine 3D Book</title>
-
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
   <style>
-    :root{
-      --pink:#ec4899;
-      --pink2:#be185d;
-      --burg:#831843;
-      --wine:#500724;
-      --paper1:#fff;
-      --paper2:#fde7f3;
-      --ink:#2a0b1a;
-      --shadow: 0 18px 40px rgba(0,0,0,.35);
+    :root {
+      --pink: #ec4899;
+      --pink2: #be185d;
+      --burg: #831843;
+      --wine: #500724;
+      --paper1: #fff;
+      --paper2: #fde7f3;
     }
-    html,body{height:100%}
-    body{
-      font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: 'Poppins', sans-serif;
       background: radial-gradient(1200px 700px at 20% 15%, #831843 0%, #500724 60%, #2b0012 100%);
-      overflow-x:hidden;
-      color:white;
+      color: white;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    /* Floating background layers */
-    .float-layer{
-      position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0;
+    /* Floating hearts */
+    .float-bg, .float-fg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
     }
-    .float-item{
-      position:absolute;
-      bottom:-10vh;
-      opacity:.18;
-      filter: blur(.2px);
-      animation: floatUp linear infinite;
-      transform-origin:center;
-      user-select:none;
+    
+    .heart {
+      position: absolute;
+      font-size: 20px;
+      animation: float linear infinite;
+      opacity: 0.2;
     }
-    .float-layer.foreground .float-item{ opacity:.28; }
-    @keyframes floatUp{
-      from{ transform: translateY(0) rotate(0deg); }
-      to{ transform: translateY(-120vh) rotate(360deg); }
+    
+    @keyframes float {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.3; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
     }
 
-    /* Book stage (phone safe-area + dvh fix) */
-    .stage{
-      position:relative;
-      z-index:1;
-      min-height: 100svh;
+    /* Main container */
+    .stage {
       min-height: 100dvh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:
-        max(16px, env(safe-area-inset-top, 0px))
-        12px
-        max(16px, env(safe-area-inset-bottom, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
     }
 
-    .book-wrap{
-      width:min(920px, 94vw);
-      height:min(620px, 78dvh);
-      max-height: 660px;
-      position:relative;
-      perspective: 1800px;
+    /* Book container */
+    .book-container {
+      width: min(95vw, 900px);
+      height: min(80dvh, 600px);
+      max-height: 650px;
+      perspective: 2000px;
+      position: relative;
     }
-    @media (max-width: 520px){
-      .book-wrap{
-        width:94vw;
-        height:74dvh;
+
+    /* Book */
+    .book {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    /* Single page */
+    .page {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #fff8f8 0%, #fdf2f8 50%, #fce7f3 100%);
+      border-radius: 20px;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      border: 1px solid rgba(236,72,153,0.3);
+      overflow: hidden;
+      backface-visibility: hidden;
+      cursor: pointer;
+      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    /* Page stack effect */
+    .page-stack {
+      position: absolute;
+      left: -8px;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.2));
+      border-radius: 20px 0 0 20px;
+      transform: translateZ(1px);
+    }
+
+    /* Flipped page */
+    .page.flipped {
+      transform: rotateY(-180deg) !important;
+    }
+
+    /* Page content */
+    .content {
+      width: 100%;
+      height: 100%;
+      padding: 30px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Cover page */
+    .cover {
+      background: linear-gradient(135deg, #831843 0%, #500724 50%, #2b0012 100%);
+      color: white;
+      text-align: center;
+    }
+
+    .cover-gift {
+      font-size: clamp(60px, 15vw, 100px);
+      margin-bottom: 20px;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .ribbon {
+      position: absolute;
+      background: linear-gradient(45deg, #ec4899, #fb7185);
+      box-shadow: 0 10px 20px rgba(236,72,153,0.4);
+      border-radius: 10px;
+    }
+
+    .ribbon.vertical {
+      width: 50px;
+      height: 100%;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .ribbon.horizontal {
+      height: 50px;
+      width: 100%;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+    }
+
+    .ribbon-cut {
+      animation: ribbonCut 0.6s ease-out forwards;
+    }
+
+    @keyframes ribbonCut {
+      to {
+        opacity: 0;
+        transform: scale(1.2) translateY(-20px);
+        filter: blur(4px);
       }
     }
 
-    .book{
-      width:100%;
-      height:100%;
-      position:relative;
-      transform-style: preserve-3d;
-      filter: drop-shadow(0 26px 45px rgba(0,0,0,.35));
-    }
-
-    /* Each sheet (page) */
-    .sheet{
-      position:absolute;
-      inset:0;
-      transform-style:preserve-3d;
-      transform-origin:left center;
-      transition: transform 900ms cubic-bezier(0.15, 1, 0.3, 1);
-      cursor:pointer;
-      touch-action: manipulation;
-    }
-    .sheet.is-flipped{ transform: rotateY(-180deg); }
-    .sheet::before{
-      content:"";
-      position:absolute;
-      top:0; bottom:0;
-      left:-7px;
-      width:7px;
-      background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.18));
-      transform: translateZ(1px);
-      border-top-left-radius: 18px;
-      border-bottom-left-radius: 18px;
-    }
-
-    .page{
-      position:absolute;
-      inset:0;
-      border-radius: 18px;
-      backface-visibility:hidden;
-      overflow:hidden;
-      background:
-        radial-gradient(800px 600px at 20% 10%, rgba(236,72,153,.10), transparent 55%),
-        linear-gradient(135deg, var(--paper1) 0%, #fff 32%, var(--paper2) 100%);
-      color: var(--ink);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(131,24,67,.22);
-    }
-    .page.front{ transform: translateZ(2px); }
-    .page.back{
-      transform: rotateY(180deg) translateZ(2px);
-      background:
-        radial-gradient(800px 600px at 80% 20%, rgba(236,72,153,.12), transparent 55%),
-        linear-gradient(135deg, #fff 0%, #fff 45%, #fde7f3 100%);
-    }
-
-    .paper-noise{
-      position:absolute; inset:0;
-      background-image: radial-gradient(rgba(0,0,0,.05) 1px, transparent 1px);
-      background-size: 10px 10px;
-      opacity:.07;
-      pointer-events:none;
-      mix-blend-mode:multiply;
-    }
-
-    /* Decorative corners */
-    .corner{
-      position:absolute;
-      width:90px; height:90px;
-      border:2px solid rgba(190,24,93,.55);
-      border-radius: 14px;
-    }
-    .corner::after{
-      content:"";
-      position:absolute; inset:10px;
-      border:2px solid rgba(236,72,153,.35);
-      border-radius: 10px;
-    }
-    .corner.tl{ top:14px; left:14px; }
-    .corner.tr{ top:14px; right:14px; }
-    .corner.bl{ bottom:14px; left:14px; }
-    .corner.br{ bottom:14px; right:14px; }
-    @media (max-width: 520px){
-      .corner{ width:72px; height:72px; }
-    }
-    @media (max-width: 380px){
-      .corner{ display:none; }
-    }
-
-    /* Date ribbon */
-    .date-ribbon{
-      position:absolute;
-      top:18px; right:18px;
-      padding: 8px 12px;
-      font-size:12px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--pink), var(--pink2));
-      color:white;
-      box-shadow: 0 12px 22px rgba(190,24,93,.25);
-      letter-spacing:.3px;
-    }
-
-    /* Titles */
-    .title{
-      font-family: "Playfair Display", serif;
-      font-weight:700;
-      font-size: clamp(20px, 3.2vw, 40px);
-      line-height: 1.1;
-      background: linear-gradient(90deg, var(--pink), #fb7185, var(--pink2));
+    /* Typography */
+    .title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 700;
+      background: linear-gradient(45deg, #ec4899, #fb7185);
       -webkit-background-clip: text;
-      background-clip:text;
-      color:transparent;
-      text-shadow: 0 10px 30px rgba(236,72,153,.12);
-    }
-    .script{ font-family: "Dancing Script", cursive; }
-
-    .big-emoji{
-      font-size: clamp(42px, 6vw, 70px);
-      filter: drop-shadow(0 12px 18px rgba(236,72,153,.20));
-      animation: bob 2.7s ease-in-out infinite;
-    }
-    @keyframes bob{
-      0%,100%{ transform: translateY(0); }
-      50%{ transform: translateY(-10px); }
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 15px;
+      text-align: center;
     }
 
-    .desc-card{
-      background: rgba(255,255,255,.72);
-      border: 2px dashed rgba(190,24,93,.45);
-      border-radius: 16px;
-      padding: 12px 12px;
-      box-shadow: 0 18px 25px rgba(0,0,0,.08);
-      transform: rotate(-1.1deg);
-    }
-    @media (max-width:520px){
-      .desc-card{ transform: rotate(-.6deg); }
+    .script {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(28px, 6vw, 48px);
     }
 
-    .continue{
-      position:absolute;
-      right:18px;
-      bottom:18px;
-      font-size: 11px;
-      color: rgba(131,24,67,.75);
-      background: rgba(255,255,255,.70);
-      border: 1px solid rgba(190,24,93,.25);
-      padding: 7px 9px;
-      border-radius: 999px;
+    .emoji-big {
+      font-size: clamp(50px, 12vw, 80px);
+      margin: 0 20px 20px 0;
+      animation: floatEmoji 3s ease-in-out infinite;
     }
 
-    .back-ghost{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 120px;
-      opacity:.08;
-      transform: scaleX(-1);
-      pointer-events:none;
-    }
-
-    /* Cover */
-    .cover-bg{
-      background:
-        radial-gradient(1100px 700px at 20% 10%, rgba(236,72,153,.16), transparent 55%),
-        linear-gradient(135deg, #831843 0%, #500724 70%, #2b0012 100%);
-      color:#fff;
-      border: 1px solid rgba(255,255,255,.18);
-    }
-    .cover-dots{
-      position:absolute; inset:0;
-      background-image: radial-gradient(rgba(255,255,255,.30) 1px, transparent 1px);
-      background-size: 14px 14px;
-      opacity:.22;
-      pointer-events:none;
-    }
-    .ribbon{
-      position:absolute;
-      background: linear-gradient(180deg, #fb7185, var(--pink2));
-      box-shadow: 0 18px 30px rgba(0,0,0,.25);
-    }
-    .ribbon.vertical{
-      width: 54px;
-      top:-10px; bottom:-10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-radius: 14px;
-    }
-    .ribbon.horizontal{
-      height: 54px;
-      left:-10px; right:-10px;
-      top: 44%;
-      transform: translateY(-50%);
-      border-radius: 14px;
-    }
-    .ribbon-knot{
-      position:absolute;
-      left: 50%;
-      top: 44%;
-      transform: translate(-50%, -50%);
-      width: 92px; height: 92px;
-      border-radius: 22px;
-      background: linear-gradient(135deg, #fb7185, var(--pink2));
-      box-shadow: 0 22px 40px rgba(0,0,0,.30);
-      display:grid; place-items:center;
-      font-size: 30px;
-    }
-    .ribbon.cut{ animation: ribbonCutV 650ms ease forwards; filter: blur(0px); }
-    .ribbon.horizontal.cut{ animation: ribbonCutH 650ms ease forwards; filter: blur(0px); }
-    @keyframes ribbonCutV{
-      to{ opacity:0; transform: translateX(-50%) scale(1.08); filter: blur(2px); }
-    }
-    @keyframes ribbonCutH{
-      to{ opacity:0; transform: translateY(-50%) scale(1.08); filter: blur(2px); }
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(5deg); }
     }
 
     /* Buttons */
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:.5rem;
-      padding: 10px 14px;
-      border-radius: 999px;
+    .btn {
+      padding: 12px 24px;
+      border-radius: 50px;
       font-weight: 600;
-      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
-      user-select:none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       touch-action: manipulation;
     }
-    .btn:hover{ transform: scale(1.05); }
-    .btn:active{ transform: scale(0.99); }
-    .btn-pink{
-      background: linear-gradient(90deg, var(--pink), var(--pink2));
-      color:white;
-      box-shadow: 0 18px 30px rgba(236,72,153,.22);
-    }
-    .btn-ghost{
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.22);
-      color:white;
-    }
-    .btn-gray{
-      background: rgba(255,255,255,.92);
-      color: #4b5563;
-      border: 1px solid rgba(0,0,0,.06);
+
+    .btn-primary {
+      background: linear-gradient(45deg, #ec4899, #be185d);
+      color: white;
+      box-shadow: 0 10px 25px rgba(236,72,153,0.4);
     }
 
-    /* Proposal arena */
-    .arena{
-      position:relative;
-      width:min(520px, 92%);
-      height: 170px;
-      margin: 18px auto 0;
-      border-radius: 18px;
-      background: rgba(255,255,255,.72);
-      border: 1px solid rgba(190,24,93,.25);
-      box-shadow: 0 18px 25px rgba(0,0,0,.08);
-      overflow:hidden;
-    }
-    .arena .yes{
-      position:absolute;
-      left: 22px;
-      top: 62px;
-      padding: 12px 18px;
-      font-size: 16px;
-    }
-    .arena .no{
-      position:absolute;
-      right: 22px;
-      top: 72px;
-      padding: 10px 14px;
-      font-size: 14px;
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(236,72,153,0.5);
     }
 
-    /* Overlay */
-    .overlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:50;
-      padding:
-        max(18px, env(safe-area-inset-top, 0px))
-        18px
-        max(18px, env(safe-area-inset-bottom, 0px));
+    .btn-secondary {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
     }
-    .overlay.show{ display:flex; }
-    .modal{
-      width:min(520px, 94vw);
-      border-radius: 18px;
+
+    /* Love calculator */
+    .love-inputs {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 30px 0;
+    }
+
+    .love-input {
+      padding: 12px 20px;
+      border-radius: 50px;
+      border: 2px solid #ec4899;
+      font-size: 18px;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .love-score {
+      font-size: clamp(80px, 20vw, 120px);
+      font-family: 'Dancing Script', cursive;
+      background: linear-gradient(45deg, #ec4899, #fb7185);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 20px 0;
+    }
+
+    /* Proposal */
+    .proposal-container {
+      text-align: center;
+      height: 200px;
+      position: relative;
+      margin: 30px 0;
+    }
+
+    .no-btn {
+      position: absolute;
+      background: rgba(255,255,255,0.9);
+      color: #666;
+      animation: shake 0.5s infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
       background: white;
-      color: #1f2937;
-      padding: 18px 16px;
-      box-shadow: 0 30px 70px rgba(0,0,0,.45);
-      transform: translateY(12px) scale(.98);
-      animation: popIn 320ms ease forwards;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.8);
+      transition: transform 0.3s ease;
     }
-    @keyframes popIn{ to{ transform: translateY(0) scale(1); } }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
 
     /* Confetti */
-    .confetti{
-      position:fixed;
-      width: 8px;
+    .confetti {
+      position: fixed;
+      width: 10px;
       height: 10px;
-      border-radius: 2px;
-      pointer-events:none;
-      z-index:60;
-      will-change: transform, opacity;
+      background: #ec4899;
+      pointer-events: none;
+      z-index: 1001;
+      border-radius: 50%;
+      animation: confetti-fall 2s linear forwards;
     }
 
-    /* signature */
-    .sig{
-      position:absolute;
-      left:18px;
-      bottom:18px;
-      font-size: 11px;
-      color: rgba(131,24,67,.55);
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .content {
+        padding: 20px;
+      }
+      
+      .love-inputs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .love-input {
+        width: 100%;
+        max-width: 250px;
+      }
     }
   </style>
 </head>
-
 <body>
-  <div class="float-layer background" id="floatBg"></div>
-  <div class="float-layer foreground" id="floatFg"></div>
+  <!-- Floating hearts -->
+  <div class="float-bg" id="floatBg"></div>
+  <div class="float-fg" id="floatFg"></div>
 
-  <main class="stage">
-    <div class="book-wrap">
-      <div class="book" id="book" aria-label="Valentine 3D book"></div>
-    </div>
-  </main>
-
-  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Success">
-    <div class="modal">
-      <div class="text-center">
-        <div class="text-4xl mb-2">💕🎉</div>
-        <div class="script text-4xl text-pink-600">You Said Yes!</div>
-        <p class="mt-2 text-gray-700">My heart is officially yours. Let’s calculate our love story.</p>
-      </div>
-      <div class="mt-4 flex gap-2 justify-center">
-        <button class="btn btn-pink" id="goCalcBtn">Calculate Our Love</button>
-        <button class="btn btn-gray" id="closeOverlayBtn">Close</button>
-      </div>
+  <div class="stage">
+    <div class="book-container">
+      <div class="book" id="book"></div>
     </div>
   </div>
 
-<script>
-  /* URLSearchParams + History API */
-  function getNameFromURL(){
-    const params = new URLSearchParams(window.location.search);
-    return (params.get('name') || '').trim();
-  }
-  function setNameInURL(name){
-    const url = new URL(window.location.href);
-    url.searchParams.set('name', name);
-    history.pushState({}, "", url.toString());
-  }
-
-  /* Confetti burst */
-  function confettiBurst(x, y, count=50){
-    const colors = ["#ec4899", "#be185d", "#ffffff", "#f59e0b"];
-    for(let i=0;i<count;i++){
-      const el = document.createElement("div");
-      el.className = "confetti";
-      el.style.left = x + "px";
-      el.style.top = y + "px";
-      el.style.background = colors[Math.floor(Math.random()*colors.length)];
-      el.style.opacity = "1";
-      const size = 6 + Math.random()*8;
-      el.style.width = size + "px";
-      el.style.height = (size*1.2) + "px";
-
-      const angle = Math.random()*Math.PI*2;
-      const power = 140 + Math.random()*240;
-      const vx = Math.cos(angle)*power;
-      const vy = Math.sin(angle)*power - (120 + Math.random()*120);
-      const spin = (Math.random()*720 - 360);
-
-      const start = performance.now();
-      const dur = 900 + Math.random()*500;
-
-      document.body.appendChild(el);
-
-      function frame(t){
-        const p = Math.min((t-start)/dur, 1);
-        const ease = 1 - Math.pow(1-p, 3);
-        const dx = vx * ease;
-        const dy = (vy * ease) + (420 * p*p);
-        el.style.transform = `translate(${dx}px, ${dy}px) rotate(${spin*ease}deg)`;
-        el.style.opacity = String(1 - p);
-        if(p < 1) requestAnimationFrame(frame);
-        else el.remove();
-      }
-      requestAnimationFrame(frame);
-    }
-  }
-
-  /* Floating background items */
-  function spawnFloatItems(layerEl, count){
-    const symbols = ["💖","🌹","🎁","✨","💞","🍫","🧸"];
-    for(let i=0;i<count;i++){
-      const s = document.createElement("div");
-      s.className = "float-item";
-      s.textContent = symbols[Math.floor(Math.random()*symbols.length)];
-      const size = 14 + Math.random()*26;
-      s.style.fontSize = size + "px";
-      s.style.left = (Math.random()*100) + "vw";
-      s.style.animationDuration = (10 + Math.random()*12) + "s";
-      s.style.animationDelay = (-Math.random()*12) + "s";
-      layerEl.appendChild(s);
-    }
-  }
-  spawnFloatItems(document.getElementById("floatBg"), 22);
-  spawnFloatItems(document.getElementById("floatFg"), 14);
-
-  /* Data */
-  const weekPages = [
-    { date:"Feb 7",  day:"Rose Day",        emoji:"🌹",
-      desc:"Roses remind me of you — soft, beautiful, and unforgettable. May their fragrance fill our days with love and calm happiness.",
-      quote:"“Life is sweeter when your heart has someone to bloom for.”"
-    },
-    { date:"Feb 8",  day:"Propose Day",     emoji:"💍",
-      desc:"Some words hide in the heart until the right person arrives. Today I want to say what I’ve always felt — I choose you, again and again.",
-      quote:"“Let’s spend a lifetime turning moments into forever.”"
-    },
-    { date:"Feb 9",  day:"Chocolate Day",   emoji:"🍫",
-      desc:"Like chocolate, love is warmth and sweetness in every little bite of life. With you, even ordinary days taste magical.",
-      quote:"“Love and chocolate: both are best when shared.”"
-    },
-    { date:"Feb 10", day:"Teddy Day",       emoji:"🧸",
-      desc:"In a world that moves fast, I want to be your comfort. A steady hug, a safe place, and a faithful companion for every season.",
-      quote:"“It’s the small things that live forever in the heart.”"
-    },
-    { date:"Feb 11", day:"Promise Day",     emoji:"🤙",
-      desc:"I promise to hold your hand through highs and lows. To listen, to understand, and to keep choosing you with patience and honesty.",
-      quote:"“I’ll love you today, tomorrow, and for all the forevers.”"
-    },
-    { date:"Feb 12", day:"Hug Day",         emoji:"🤗",
-      desc:"Your arms feel like home — quiet, warm, and real. When life gets heavy, let my hug remind you: you are never alone.",
-      quote:"“Hugs are boomerangs — you get them back right away.”"
-    },
-    { date:"Feb 13", day:"Kiss Day",        emoji:"💋",
-      desc:"Some secrets are too precious for words. They belong to gentle smiles and kisses that say: you matter more than everything.",
-      quote:"“Kisses make the heart remember what words can’t explain.”"
-    },
-    { date:"Feb 14", day:"Valentine’s Day", emoji:"❤️",
-      desc:"Today we celebrate us — our laughs, our growth, our little rituals. I love you not for perfection, but for the beautiful way you’re you.",
-      quote:"“True love is loving every imperfect part perfectly.”"
-    },
-  ];
-
-  const bookEl = document.getElementById("book");
-  let currentIndex = 0;
-  let recipientName = getNameFromURL();
-
-  function pageShell({cover=false}={}){
-    const corner = `
-      <div class="corner tl"></div><div class="corner tr"></div>
-      <div class="corner bl"></div><div class="corner br"></div>
-    `;
-    return `
-      <div class="paper-noise"></div>
-      ${cover ? "" : corner}
-      <div class="sig">design by pawan coder</div>
-    `;
-  }
-
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, s => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[s]));
-  }
-  function escapeAttr(str){ return escapeHtml(str).replace(/"/g, "&quot;"); }
-
-  function buildCoverFront(){
-    const hasName = !!recipientName;
-    return `
-    <div class="page front cover-bg">
-      <div class="cover-dots"></div>
-
-      <div class="ribbon vertical" id="ribV"></div>
-      <div class="ribbon horizontal" id="ribH"></div>
-      <div class="ribbon-knot" id="ribK">🎀</div>
-
-      <div class="absolute inset-0 p-6 sm:p-8 flex flex-col items-center justify-center text-center">
-        <div class="text-6xl mb-4" style="filter:drop-shadow(0 18px 22px rgba(0,0,0,.35));">🎁</div>
-
-        <div class="script text-5xl sm:text-6xl leading-tight">
-          ${hasName ? `For You, <span class="text-pink-200">${escapeHtml(recipientName)}</span>` : "For Someone Special"}
-        </div>
-
-        <p class="mt-3 max-w-md text-white/85">
-          ${hasName ? "A special gift awaits inside..." : "Enter a name to personalize this gift, then cut the ribbon to open the book."}
-        </p>
-
-        <div class="mt-5 w-full max-w-sm">
-          ${hasName ? "" : `
-            <input id="nameInput"
-              class="w-full rounded-full px-4 py-3 text-gray-900 outline-none ring-2 ring-white/20 focus:ring-pink-300"
-              placeholder="Recipient name (e.g., Priya)" autocomplete="name" />
-            <p class="mt-2 text-xs text-white/70">Tip: press Enter to continue.</p>
-          `}
-        </div>
-
-        <div class="mt-5 flex gap-2 justify-center flex-wrap">
-          <button id="cutRibbonBtn" class="btn btn-pink">Cut Ribbon ✂️</button>
-          <button id="shareBtn" class="btn btn-ghost">Copy Share Link</button>
-        </div>
-      </div>
-
-      ${pageShell({cover:true})}
+  <!-- Success Modal -->
+  <div class="modal" id="successModal">
+    <div class="modal-content">
+      <div style="font-size: 4rem; margin-bottom: 20px;">💖✨</div>
+      <h2 class="script" style="font-size: 2.5rem; color: #ec4899; margin-bottom: 20px;">You Said YES!</h2>
+      <p style="font-size: 1.2rem; color: #666; margin-bottom: 30px;">My heart is yours forever! Let's check our love compatibility...</p>
+      <button class="btn btn-primary" id="goLoveCalc" style="font-size: 1.1rem;">Calculate Our Love</button>
     </div>
-    `;
-  }
+  </div>
 
-  function buildCoverBack(){
-    return `
-    <div class="page back">
-      <div class="back-ghost">🎁</div>
-      <div class="absolute inset-0 p-6 sm:p-8 flex flex-col justify-center">
-        <div class="title">Open gently…</div>
-        <p class="mt-3 text-gray-700 max-w-lg">
-          Every page is a day of Valentine’s Week — and every day is a reason to love you a little more.
-        </p>
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
+  <script>
+    // Global state
+    let currentPage = 0;
+    let recipientName = '';
+    let pages = [];
+    let isAnimating = false;
 
-  function buildWeekFront(i){
-    const p = weekPages[i];
-    const nm = recipientName || "You";
-    return `
-    <div class="page front">
-      <div class="date-ribbon">${p.date}</div>
-      <div class="absolute inset-0 p-6 sm:p-8">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="title">${p.day}</div>
-            <div class="mt-2 text-sm text-gray-700">Dearest <span class="font-semibold text-pink-700">${escapeHtml(nm)}</span>,</div>
-          </div>
-          <div class="big-emoji">${p.emoji}</div>
-        </div>
+    // Valentine's week data
+    const valentineWeek = [
+      { day: '🌹 Rose Day - Feb 7', title: 'Rose Day', desc: 'Your smile is like a rose that brightens my every day.', quote: '“Roses are red, my love for you is true.”' },
+      { day: '💍 Propose Day - Feb 8', title: 'Propose Day', desc: 'Today I propose to love you more each day.', quote: '“Forever starts today.”' },
+      { day: '🍫 Chocolate Day - Feb 9', title: 'Chocolate Day', desc: 'You are sweeter than chocolate, warmer than cocoa.', quote: '“Love is like chocolate - the best when shared.”' },
+      { day: '🧸 Teddy Day - Feb 10', title: 'Teddy Day', desc: 'Be my teddy bear, my comfort in every storm.', quote: '“In your arms, I find my peace.”' },
+      { day: '🤝 Promise Day - Feb 11', title: 'Promise Day', desc: 'I promise to hold your hand through every journey.', quote: '“Promises made with love, kept forever.”' },
+      { day: '🤗 Hug Day - Feb 12', title: 'Hug Day', desc: 'Your hugs are my safe haven, my home.', quote: '“A hug is worth a thousand words.”' },
+      { day: '💋 Kiss Day - Feb 13', title: 'Kiss Day', desc: 'Every kiss tells a story of our endless love.', quote: '“Kisses speak what words cannot.”' },
+      { day: '❤️ Valentine\'s Day - Feb 14', title: "Valentine's Day", desc: 'Today and every day, I choose you completely.', quote: '“You are my today and all of my tomorrows.”' }
+    ];
 
-        <div class="mt-5 desc-card text-gray-800">
-          ${escapeHtml(p.desc)}
-        </div>
-
-        <div class="mt-4 script text-2xl text-pink-700 italic">
-          ${escapeHtml(p.quote)}
-        </div>
-
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildWeekBack(i){
-    const p = weekPages[i];
-    return `
-    <div class="page back">
-      <div class="back-ghost">${p.emoji}</div>
-      <div class="absolute inset-0 p-6 sm:p-8 flex flex-col justify-center">
-        <div class="script text-4xl text-pink-700">Turn the page…</div>
-        <p class="mt-2 text-gray-700">One day closer to a question I’ve been waiting to ask.</p>
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildProposalFront(){
-    const nm = recipientName || "My Love";
-    return `
-    <div class="page front">
-      <div class="date-ribbon">Finale</div>
-      <div class="absolute inset-0 p-6 sm:p-8 text-center">
-        <div class="text-sm text-gray-700">For <span class="font-semibold text-pink-700">${escapeHtml(nm)}</span></div>
-        <div class="script text-5xl sm:text-6xl text-pink-700 mt-2">Will You Be My Valentine?</div>
-        <p class="mt-3 text-gray-700 max-w-xl mx-auto">
-          This book was eight days of feelings — but the real story begins when you say yes.
-        </p>
-
-        <div class="arena" id="arena">
-          <button class="btn btn-pink yes" id="yesBtn">YES 💖</button>
-          <button class="btn btn-gray no" id="noBtn">NO</button>
-        </div>
-
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildProposalBack(){
-    return `
-    <div class="page back">
-      <div class="back-ghost">💖</div>
-      <div class="absolute inset-0 p-6 sm:p-8 flex flex-col justify-center">
-        <div class="title">One more thing…</div>
-        <p class="mt-2 text-gray-700">Let’s calculate our compatibility — just for fun (and a little magic).</p>
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildCalcFront(){
-    const nm = recipientName || "";
-    return `
-    <div class="page front">
-      <div class="date-ribbon">Love Calc</div>
-      <div class="absolute inset-0 p-6 sm:p-8">
-        <div class="script text-5xl text-pink-700 text-center">Love Calculator</div>
-
-        <div class="mt-6 max-w-xl mx-auto">
-          <div class="flex items-center justify-center gap-3 flex-wrap">
-            <input id="yourName"
-              class="rounded-full px-4 py-3 outline-none ring-2 ring-pink-200 bg-pink-50 text-pink-900"
-              value="${escapeAttr(nm)}" ${nm ? "readonly" : ""} placeholder="Your name" />
-            <div class="text-2xl text-pink-700 font-bold">+</div>
-            <input id="partnerName"
-              class="rounded-full px-4 py-3 outline-none ring-2 ring-pink-200 bg-white text-gray-900"
-              placeholder="Partner name" />
-          </div>
-
-          <div class="mt-4 flex justify-center">
-            <button id="calcBtn" class="btn btn-pink">Calculate Compatibility</button>
-          </div>
-
-          <div class="mt-5 text-center">
-            <div id="score" class="script text-7xl text-pink-700 leading-none">--%</div>
-            <div id="msg" class="mt-2 text-gray-700">Enter the second name and tap calculate.</div>
-          </div>
-
-          <div class="mt-6 flex justify-center">
-            <button id="copyLinkBtn" class="btn btn-gray">Copy Link to Send</button>
-          </div>
-        </div>
-
-        <div class="continue">Tap to Continue →</div>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildCalcBack(){
-    return `
-    <div class="page back">
-      <div class="back-ghost">✨</div>
-      <div class="absolute inset-0 p-6 sm:p-8 flex flex-col justify-center text-center">
-        <div class="script text-5xl text-pink-700">The End</div>
-        <p class="mt-2 text-gray-700">Now go share this little gift with someone special.</p>
-      </div>
-      ${pageShell()}
-    </div>
-    `;
-  }
-
-  function buildBook(){
-    bookEl.innerHTML = "";
-    const totalSheets = 1 + weekPages.length + 1 + 1; // cover + 8 + proposal + calc
-    let zBase = totalSheets * 2;
-
-    function addSheet(frontHTML, backHTML, idx){
-      const sheet = document.createElement("div");
-      sheet.className = "sheet";
-      sheet.dataset.index = idx;
-      sheet.style.zIndex = String(zBase - idx);
-      sheet.innerHTML = frontHTML + backHTML;
-      bookEl.appendChild(sheet);
-      return sheet;
+    // Initialize app
+    function init() {
+      getNameFromURL();
+      createFloatingHearts();
+      buildBook();
+      bindEvents();
     }
 
-    const sheets = [];
-    sheets.push(addSheet(buildCoverFront(), buildCoverBack(), 0));
-    for(let i=0;i<weekPages.length;i++){
-      sheets.push(addSheet(buildWeekFront(i), buildWeekBack(i), i+1));
+    // Get name from URL
+    function getNameFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      recipientName = urlParams.get('name') || '';
     }
-    sheets.push(addSheet(buildProposalFront(), buildProposalBack(), 9));
-    sheets.push(addSheet(buildCalcFront(), buildCalcBack(), 10));
-    return sheets;
-  }
 
-  let sheets = buildBook();
-
-  function canFlipFromTarget(target){
-    if(!target) return true;
-    return !target.closest("input, button, a, textarea, select, label, .arena");
-  }
-
-  function flipTo(nextIndex){
-    sheets.forEach((sh, i)=>{
-      if(i < nextIndex) sh.classList.add("is-flipped");
-      else sh.classList.remove("is-flipped");
-    });
-    currentIndex = nextIndex;
-
-    setTimeout(()=>{
-      sheets.forEach((sh, i)=>{
-        sh.style.zIndex = String((i < currentIndex) ? i : (100 + (sheets.length - i)));
+    // Create floating hearts
+    function createFloatingHearts() {
+      const hearts = ['💖', '🌹', '✨', '💕'];
+      [document.getElementById('floatBg'), document.getElementById('floatFg')].forEach((container, i) => {
+        for (let j = 0; j < 15; j++) {
+          const heart = document.createElement('div');
+          heart.className = 'heart';
+          heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+          heart.style.left = Math.random() * 100 + '%';
+          heart.style.animationDuration = (8 + Math.random() * 8) + 's';
+          heart.style.animationDelay = Math.random() * 8 + 's';
+          container.appendChild(heart);
+        }
       });
-    }, 520);
-  }
-
-  function handleSheetClick(e){
-    if(!canFlipFromTarget(e.target)) return;
-    const sheet = e.currentTarget;
-    const idx = Number(sheet.dataset.index);
-
-    if(idx === currentIndex){
-      flipTo(Math.min(currentIndex + 1, sheets.length));
-    } else if(idx === currentIndex - 1) {
-      flipTo(Math.max(currentIndex - 1, 0));
-    }
-  }
-
-  function bindSheetClicks(){
-    sheets.forEach(sh => sh.addEventListener("click", handleSheetClick));
-  }
-  bindSheetClicks();
-
-  function copyText(txt){
-    return navigator.clipboard.writeText(txt);
-  }
-  function getShareURL(){
-    const url = new URL(window.location.href);
-    const nm = recipientName.trim();
-    if(nm) url.searchParams.set("name", nm);
-    else url.searchParams.delete("name");
-    return url.toString();
-  }
-
-  function initCover(){
-    const cutBtn = document.getElementById("cutRibbonBtn");
-    const shareBtn = document.getElementById("shareBtn");
-    const nameInput = document.getElementById("nameInput");
-    const ribV = document.getElementById("ribV");
-    const ribH = document.getElementById("ribH");
-    const ribK = document.getElementById("ribK");
-
-    function doRibbonAnim(v,h,k){
-      if(v) v.classList.add("cut");
-      if(h) h.classList.add("cut");
-      if(k) {
-        k.style.transition = "all 650ms ease";
-        k.style.opacity = "0";
-        k.style.transform = "translate(-50%, -50%) scale(1.08)";
-        k.style.filter = "blur(2px)";
-      }
-      confettiBurst(innerWidth/2, innerHeight/2, 50);
-      setTimeout(()=> flipTo(1), 520);
     }
 
-    function cutRibbon(){
-      if(!recipientName){
-        const val = (nameInput?.value || "").trim();
-        if(!val){
-          nameInput?.focus();
-          nameInput?.classList.add("ring-red-300");
-          setTimeout(()=> nameInput?.classList.remove("ring-red-300"), 700);
+    // Build book pages
+    function buildBook() {
+      const book = document.getElementById('book');
+      book.innerHTML = '';
+
+      // Cover page
+      pages.push(createCoverPage());
+      
+      // Valentine's week pages
+      valentineWeek.forEach((week, i) => {
+        pages.push(createWeekPage(i));
+      });
+      
+      // Proposal page
+      pages.push(createProposalPage());
+      
+      // Love calculator page
+      pages.push(createLoveCalculatorPage());
+
+      pages.forEach((page, index) => {
+        page.style.zIndex = pages.length - index;
+        book.appendChild(page);
+      });
+    }
+
+    // Create cover page
+    function createCoverPage() {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = `
+        <div class="page-stack"></div>
+        <div class="content cover">
+          <div class="ribbon vertical" id="ribbonV"></div>
+          <div class="ribbon horizontal" id="ribbonH"></div>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: linear-gradient(45deg, #fb7185, #ec4899); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(236,72,153,0.5);">🎀</div>
+          
+          <div style="position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+            <div class="cover-gift">🎁</div>
+            <div class="script" style="font-size: clamp(32px, 8vw, 52px); margin-bottom: 15px;">
+              ${recipientName ? `For You,<br><span style="color: #fbb6ce;">${recipientName}</span>` : 'For Someone Special'}
+            </div>
+            ${!recipientName ? `
+              <div style="max-width: 280px; margin: 20px 0;">
+                <input type="text" id="nameInput" placeholder="Enter name (e.g. Priya)" style="width: 100%; padding: 15px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; font-size: 16px; text-align: center;">
+              </div>
+            ` : ''}
+            <p style="margin-bottom: 30px; opacity: 0.9; max-width: 300px; line-height: 1.5;">
+              ${recipientName ? 'A special gift awaits inside...' : 'Enter a name to unlock this magical book'}
+            </p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+              <button class="btn btn-primary" id="openBookBtn" style="font-size: 18px;">${recipientName ? 'Open Gift ✂️' : 'Continue'}</button>
+              <button class="btn btn-secondary" id="shareBtn">Share Link</button>
+            </div>
+          </div>
+        </div>
+      `;
+      return page;
+    }
+
+    // Create week page
+    function createWeekPage(index) {
+      const week = valentineWeek[index];
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = `
+        <div class="page-stack"></div>
+        <div class="content">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+            <div>
+              <div class="title">${week.title}</div>
+              <div style="color: #666; margin-top: 5px; font-size: 16px;">
+                Dearest ${recipientName || 'Love'},
+              </div>
+            </div>
+            <div class="emoji-big">${week.day.split(' ')[0]}</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 15px; border-left: 4px dashed #ec4899; margin-bottom: 25px; line-height: 1.6; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            ${week.desc}
+          </div>
+          <div class="script" style="color: #ec4899; font-size: 22px; font-style: italic; text-align: center; margin-bottom: 30px;">
+            ${week.quote}
+          </div>
+          <div style="position: absolute; bottom: 30px; right: 30px; color: #ec4899; font-size: 14px;">→ Next Page</div>
+          <div style="position: absolute; bottom: 20px; left: 20px; font-size: 12px; color: #999;">design by pawan coder</div>
+        </div>
+      `;
+      return page;
+    }
+
+    // Create proposal page
+    function createProposalPage() {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = `
+        <div class="page-stack"></div>
+        <div class="content" style="text-align: center;">
+          <div style="margin-bottom: 20px; color: #666; font-size: 16px;">
+            For ${recipientName || 'My Love'}
+          </div>
+          <div class="script" style="font-size: clamp(36px, 9vw, 56px); color: #ec4899; margin-bottom: 25px; line-height: 1.2;">
+            Will You Be<br>My Valentine?
+          </div>
+          <p style="max-width: 350px; margin: 0 auto 40px; line-height: 1.6; color: #666;">
+            These 8 days were just the beginning. Will you make every day Valentine's Day?
+          </p>
+          <div class="proposal-container">
+            <button class="btn btn-primary" id="yesBtn" style="position: absolute; left: 50px; top: 50%; transform: translateY(-50%); padding: 18px 36px; font-size: 20px;">YES 💖</button>
+            <button class="btn no-btn" id="noBtn" style="position: absolute; right: 50px; top: 50%; transform: translateY(-50%); padding: 14px 28px;">No 😢</button>
+          </div>
+          <div style="position: absolute; bottom: 20px; left: 20px; font-size: 12px; color: #999;">design by pawan coder</div>
+        </div>
+      `;
+      return page;
+    }
+
+    // Create love calculator
+    function createLoveCalculatorPage() {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = `
+        <div class="page-stack"></div>
+        <div class="content" style="text-align: center;">
+          <div class="script" style="font-size: clamp(36px, 9vw, 52px); color: #ec4899; margin-bottom: 30px;">
+            Love Calculator
+          </div>
+          <div class="love-inputs">
+            <input type="text" id="yourNameInput" class="love-input" placeholder="You" value="${recipientName}" readonly>
+            <span style="font-size: 2rem; color: #ec4899;">+</span>
+            <input type="text" id="partnerNameInput" class="love-input" placeholder="Partner">
+          </div>
+          <button class="btn btn-primary" id="calculateBtn" style="margin: 25px 0;">Calculate Love 💕</button>
+          <div>
+            <div class="love-score" id="loveScore">--%</div>
+            <div id="loveMessage" style="font-size: 20px; color: #666; margin-top: 15px; min-height: 30px;"></div>
+          </div>
+          <button class="btn btn-secondary" id="shareLoveLink" style="margin-top: 30px;">Share This Magic ✨</button>
+          <div style="position: absolute; bottom: 20px; left: 20px; font-size: 12px; color: #999;">design by pawan coder</div>
+        </div>
+      `;
+      return page;
+    }
+
+    // Event binding
+    function bindEvents() {
+      // Open book
+      document.addEventListener('click', function(e) {
+        if (e.target.id === 'openBookBtn' || e.target.id === 'cutRibbonBtn') {
+          e.preventDefault();
+          e.stopPropagation();
+          openBook();
+        }
+      });
+
+      // Name input enter
+      document.addEventListener('keypress', function(e) {
+        if (e.target.id === 'nameInput' && e.key === 'Enter') {
+          setRecipientName(e.target.value);
+        }
+      });
+
+      // Share button
+      document.addEventListener('click', function(e) {
+        if (e.target.id === 'shareBtn' || e.target.id === 'shareLoveLink') {
+          e.preventDefault();
+          e.stopPropagation();
+          shareLink();
+        }
+      });
+
+      // Proposal buttons
+      document.addEventListener('click', function(e) {
+        if (e.target.id === 'yesBtn') {
+          e.preventDefault();
+          e.stopPropagation();
+          showSuccessModal();
+        } else if (e.target.id === 'noBtn') {
+          e.preventDefault();
+          e.stopPropagation();
+          moveNoButton(e.target);
+        }
+      });
+
+      // Love calculator
+      document.addEventListener('click', function(e) {
+        if (e.target.id === 'calculateBtn') {
+          e.preventDefault();
+          e.stopPropagation();
+          calculateLove();
+        } else if (e.target.id === 'goLoveCalc') {
+          e.preventDefault();
+          e.stopPropagation();
+          document.getElementById('successModal').classList.remove('show');
+          goToPage(pages.length - 1);
+        }
+      });
+
+      // Page clicks
+      document.getElementById('book').addEventListener('click', function(e) {
+        if (isAnimating || e.target.closest('input, button')) return;
+        
+        const rect = e.target.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        
+        // Swipe left to next page
+        if (x > rect.width * 0.3) {
+          nextPage();
+        }
+      });
+    }
+
+    // Open book animation
+    function openBook() {
+      if (!recipientName) {
+        const nameInput = document.getElementById('nameInput');
+        if (nameInput && nameInput.value.trim()) {
+          setRecipientName(nameInput.value.trim());
           return;
         }
-        recipientName = val;
-        setNameInURL(recipientName);
+      }
+      cutRibbon();
+    }
 
-        sheets = buildBook();
-        bindSheetClicks();
-        initAllInteractive();
+    // Set recipient name
+    function setRecipientName(name) {
+      recipientName = name;
+      const url = new URL(window.location);
+      url.searchParams.set('name', name);
+      history.pushState({}, '', url);
+      rebuildBook();
+    }
 
-        // run ribbon animation after rebuild
-        requestAnimationFrame(()=>{
-          doRibbonAnim(
-            document.getElementById("ribV"),
-            document.getElementById("ribH"),
-            document.getElementById("ribK")
-          );
-        });
+    // Ribbon cut animation
+    function cutRibbon() {
+      const ribbonV = document.getElementById('ribbonV');
+      const ribbonH = document.getElementById('ribbonH');
+      
+      if (ribbonV) ribbonV.classList.add('ribbon-cut');
+      if (ribbonH) ribbonH.classList.add('ribbon-cut');
+      
+      launchConfetti();
+      setTimeout(() => nextPage(), 700);
+    }
+
+    // Navigate pages
+    function nextPage() {
+      if (isAnimating || currentPage >= pages.length - 1) return;
+      isAnimating = true;
+      currentPage++;
+      animatePageFlip();
+    }
+
+    function goToPage(pageIndex) {
+      if (isAnimating || pageIndex === currentPage) return;
+      isAnimating = true;
+      currentPage = pageIndex;
+      animatePageFlip();
+    }
+
+    function animatePageFlip() {
+      pages.forEach((page, index) => {
+        if (index < currentPage) {
+          page.classList.add('flipped');
+        } else {
+          page.classList.remove('flipped');
+        }
+      });
+      
+      setTimeout(() => {
+        isAnimating = false;
+      }, 800);
+    }
+
+    // Rebuild book with new name
+    function rebuildBook() {
+      pages = [];
+      buildBook();
+      bindEvents();
+      currentPage = 0;
+    }
+
+    // Move NO button
+    function moveNoButton(btn) {
+      const container = btn.parentElement;
+      const maxX = container.offsetWidth - btn.offsetWidth - 20;
+      const maxY = container.offsetHeight - btn.offsetHeight - 20;
+      
+      btn.style.left = Math.random() * maxX + 'px';
+      btn.style.top = Math.random() * maxY + 'px';
+      btn.style.right = 'auto';
+      btn.style.position = 'absolute';
+    }
+
+    // Success modal
+    function showSuccessModal() {
+      launchConfetti();
+      document.getElementById('successModal').classList.add('show');
+    }
+
+    // Love calculator
+    function calculateLove() {
+      const yourName = document.getElementById('yourNameInput').value.trim();
+      const partnerName = document.getElementById('partnerNameInput').value.trim();
+      
+      if (!partnerName) {
+        alert('Enter partner name first! 💕');
         return;
       }
-      doRibbonAnim(ribV,ribH,ribK);
+      
+      const score = Math.floor(Math.abs(yourName.split('').reduce((a, b) => a + b.charCodeAt(0), 0) - 
+                               partnerName.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 40 + 60);
+      
+      const scoreEl = document.getElementById('loveScore');
+      const msgEl = document.getElementById('loveMessage');
+      
+      // Animate score
+      let current = 0;
+      const timer = setInterval(() => {
+        current += 2;
+        scoreEl.textContent = current + '%';
+        if (current >= score) {
+          clearInterval(timer);
+          
+          let message = '';
+          if (score >= 90) {
+            message = 'Perfect Match! Soulmates Forever! 💖✨';
+            launchConfetti();
+          } else if (score >= 80) {
+            message = 'Amazing Chemistry! True Love! 💕';
+          } else {
+            message = 'Great Potential! Keep Loving! ❤️';
+          }
+          
+          msgEl.textContent = message;
+        }
+      }, 30);
     }
 
-    cutBtn?.addEventListener("click", (e)=>{ e.stopPropagation(); cutRibbon(); });
-    shareBtn?.addEventListener("click", async (e)=>{
-      e.stopPropagation();
-      await copyText(getShareURL());
-      shareBtn.textContent = "Copied!";
-      setTimeout(()=> shareBtn.textContent = "Copy Share Link", 900);
-    });
-    nameInput?.addEventListener("keydown", (e)=>{
-      if(e.key === "Enter") cutRibbon();
-    });
-  }
-
-  function initProposal(){
-    const arena = document.getElementById("arena");
-    const noBtn = document.getElementById("noBtn");
-    const yesBtn = document.getElementById("yesBtn");
-    const overlay = document.getElementById("overlay");
-    const goCalcBtn = document.getElementById("goCalcBtn");
-    const closeOverlayBtn = document.getElementById("closeOverlayBtn");
-
-    function moveNo(){
-      if(!arena || !noBtn) return;
-      const ar = arena.getBoundingClientRect();
-      const br = noBtn.getBoundingClientRect();
-      const pad = 10;
-      const maxX = Math.max(pad, ar.width - br.width - pad);
-      const maxY = Math.max(pad, ar.height - br.height - pad);
-      const x = pad + Math.random() * (maxX - pad);
-      const y = pad + Math.random() * (maxY - pad);
-      noBtn.style.left = x + "px";
-      noBtn.style.top = y + "px";
-      noBtn.style.right = "auto";
-    }
-
-    ["mouseenter","pointerdown","touchstart"].forEach(ev=>{
-      noBtn?.addEventListener(ev, (e)=>{
-        e.preventDefault(); e.stopPropagation();
-        moveNo();
-      }, {passive:false});
-    });
-
-    yesBtn?.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      const x = (e.clientX || innerWidth/2);
-      const y = (e.clientY || innerHeight/2);
-      confettiBurst(x, y, 50);
-      overlay?.classList.add("show");
-    });
-
-    closeOverlayBtn?.addEventListener("click", ()=> overlay?.classList.remove("show"));
-    overlay?.addEventListener("click", (e)=>{
-      if(e.target === overlay) overlay.classList.remove("show");
-    });
-
-    goCalcBtn?.addEventListener("click", ()=>{
-      overlay?.classList.remove("show");
-      flipTo(10);
-    });
-  }
-
-  function computeScore(a,b){
-    const A = (a || "").trim().toLowerCase();
-    const B = (b || "").trim().toLowerCase();
-    if(!A || !B) return null;
-    if(A === B) return 100;
-    if(A.includes("love") || B.includes("love")) return 100;
-
-    let sum = 0;
-    for(const ch of (A + B)) sum += ch.charCodeAt(0);
-    return 60 + (sum % 40);
-  }
-
-  function scoreMessage(score){
-    if(score >= 90) return "Perfect Match! Soulmates Forever! 💕";
-    if(score >= 80) return "Great chemistry! Love is in the air! 💖";
-    return "Good potential! Keep nurturing your love! 💝";
-  }
-
-  function animateCount(el, from, to, ms=900){
-    const start = performance.now();
-    function frame(t){
-      const p = Math.min((t-start)/ms, 1);
-      const eased = 1 - Math.pow(1-p, 3);
-      const v = Math.round(from + (to-from)*eased);
-      el.textContent = v + "%";
-      if(p < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
-
-  function initCalculator(){
-    const yourName = document.getElementById("yourName");
-    const partnerName = document.getElementById("partnerName");
-    const calcBtn = document.getElementById("calcBtn");
-    const scoreEl = document.getElementById("score");
-    const msgEl = document.getElementById("msg");
-    const copyLinkBtn = document.getElementById("copyLinkBtn");
-
-    if(yourName && !yourName.value && recipientName) yourName.value = recipientName;
-
-    calcBtn?.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      const a = (yourName?.value || "").trim();
-      const b = (partnerName?.value || "").trim();
-
-      if(!a){ msgEl.textContent = "Please enter your name first."; yourName?.focus(); return; }
-      if(!b){ msgEl.textContent = "Please enter partner name."; partnerName?.focus(); return; }
-
-      if(!recipientName && a){
-        recipientName = a;
-        setNameInURL(recipientName);
+    // Share link
+    async function shareLink() {
+      const url = new URL(window.location);
+      if (recipientName) {
+        url.searchParams.set('name', recipientName);
       }
-
-      const sc = computeScore(a,b);
-      if(sc == null) return;
-
-      const current = parseInt((scoreEl.textContent || "0").replace("%",""), 10) || 0;
-      animateCount(scoreEl, current, sc, 950);
-      msgEl.textContent = scoreMessage(sc);
-
-      if(sc >= 90){
-        confettiBurst(innerWidth/2, innerHeight/2, 50);
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        const btn = event.target;
+        const original = btn.textContent;
+        btn.textContent = 'Copied! ✨';
+        setTimeout(() => btn.textContent = original, 2000);
+      } catch {
+        alert('Link: ' + url.toString());
       }
-    });
+    }
 
-    copyLinkBtn?.addEventListener("click", async (e)=>{
-      e.stopPropagation();
-      await copyText(getShareURL());
-      copyLinkBtn.textContent = "Copied!";
-      setTimeout(()=> copyLinkBtn.textContent = "Copy Link to Send", 900);
-    });
-  }
+    // Confetti effect
+    function launchConfetti() {
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * window.innerWidth + 'px';
+        confetti.style.top = Math.random() * window.innerHeight + 'px';
+        confetti.style.background = ['#ec4899', '#fb7185', '#ffffff', '#f59e0b'][Math.floor(Math.random() * 4)];
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => confetti.remove(), 2000);
+      }
+    }
 
-  function initAllInteractive(){
-    initCover();
-    initProposal();
-    initCalculator();
-  }
-  initAllInteractive();
-</script>
+    // Initialize
+    init();
+  </script>
 </body>
 </html>
